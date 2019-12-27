@@ -78,7 +78,6 @@ void SpellerDialog::startSpelling()
 	if (!editor) return;
 	ignoreListChanged = false;
 	if (editor->cursor().hasSelection()) {
-
 		m_statusBar->showMessage(tr("Check spelling selection..."));
 		//endpos=c.selectionEnd();
 		//c.setPosition(endpos,QTextCursor::MoveAnchor);
