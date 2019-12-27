@@ -1,12 +1,12 @@
 /***************************************************************************
- *   copyright       : (C) 2007 by Pascal Brachet                          *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+*   copyright       : (C) 2007 by Pascal Brachet                          *
+*                                                                         *
+*   This program is free software; you can redistribute it and/or modify  *
+*   it under the terms of the GNU General Public License as published by  *
+*   the Free Software Foundation; either version 2 of the License, or     *
+*   (at your option) any later version.                                   *
+*                                                                         *
+***************************************************************************/
 
 #ifndef SPELLERDIALOG_H
 #define SPELLERDIALOG_H
@@ -75,9 +75,7 @@ class IgnoreListViewDelegate : public QStyledItemDelegate
 
 public:
 	explicit IgnoreListViewDelegate(QObject *parent = 0);
-	void setModelData(QWidget *editor,
-	                  QAbstractItemModel *model,
-	                  const QModelIndex &index) const;
+	void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;
 };
 
 
