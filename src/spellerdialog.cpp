@@ -79,22 +79,15 @@ void SpellerDialog::startSpelling()
 	ignoreListChanged = false;
 	if (editor->cursor().hasSelection()) {
 		m_statusBar->showMessage(tr("Check spelling selection..."));
-		//endpos=c.selectionEnd();
-		//c.setPosition(endpos,QTextCursor::MoveAnchor);
-		//c.setPosition(startpos,QTextCursor::MoveAnchor);
 		startLine = editor->cursor().selectionStart().lineNumber();
 		startIndex = editor->cursor().selectionStart().columnNumber();
 		endLine = editor->cursor().selectionEnd().lineNumber();
 		endIndex = editor->cursor().selectionEnd().columnNumber();
 	} else  {
-		//	c.movePosition(QTextCursor::Start,QTextCursor::MoveAnchor);
 		m_statusBar->showMessage(tr("Check spelling from cursor..."));
-		//endpos=c.position();
-		//c.setPosition(startpos,QTextCursor::MoveAnchor);
 		editor->getCursorPosition(startLine, startIndex);
 		endLine = editor->document()->lines() - 1;
 		endIndex = editor->text(endLine).length();
-		latexReader.setLine(editor->document()->line(startLine).text());
 		//jump from word to word until an valid index is reached
 		while (latexReader.index < startIndex)
 			if (!latexReader.nextTextWord()) break;
