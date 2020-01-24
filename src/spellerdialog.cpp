@@ -88,14 +88,9 @@ void SpellerDialog::startSpelling()
 		editor->getCursorPosition(startLine, startIndex);
 		endLine = editor->document()->lines() - 1;
 		endIndex = editor->text(endLine).length();
-		//jump from word to word until an valid index is reached
-		while (latexReader.index < startIndex)
-			if (!latexReader.nextTextWord()) break;
-		startIndex = latexReader.wordStartIndex;
 	}
 	curLine = startLine;
-	latexReader.index = startIndex;
-	latexReader.word = "";
+	curIndex = startIndex;
 	show();
 	SpellingNextWord();
 }
@@ -151,10 +146,9 @@ void SpellerDialog::slotReplace()
 {
 	if (!editor) return;
 	if (editor->cursor().hasSelection()) {
-		QString selectedword = editor->cursor().selectedText();
-		latexReader.index += ui.lineEditNew->text().size() - latexReader.word.size();
-		latexReader.word = ui.lineEditNew->text();
-		editor->insertText(latexReader.word);
+		QString newText = ui.lineEditNew->text();
+		curIndex += newText.size() - editor->cursor().selectedText().size();
+		editor->insertText(newText);
 	}
 	SpellingNextWord();
 }
@@ -162,6 +156,46 @@ void SpellerDialog::slotReplace()
 void SpellerDialog::SpellingNextWord()
 {
 	if (!editor || !m_speller) return;
+	QString nextWord;
+	if (SpellingFetchWord(nextWord)) {
+		QDocumentCursor wordSelection(editor->document(), curLine, latexReader.wordStartIndex);
+		wordSelection.movePosition(latexReader.index - latexReader.wordStartIndex, QDocumentCursor::NextCharacter, QDocumentCursor::KeepAnchor);
+		editor->setCursor(wordSelection);
+
+		ui.listSuggestions->setEnabled(true);
+		ui.lineEditNew->setEnabled(true);
+		ui.pushButtonIgnore->setEnabled(true);
+		ui.pushButtonAlwaysIgnore->setEnabled(true);
+		ui.pushButtonReplace->setEnabled(true);
+		ui.lineEditOriginal->setEnabled(true);
+		ui.lineEditOriginal->setText(latexReader.word);
+		ui.listSuggestions->clear();
+		ui.lineEditNew->clear();
+		m_statusBar->clearMessage();
+		if (!suggWords.isEmpty()) {
+			ui.listSuggestions->addItems(suggWords);
+			ui.lineEditNew->setText(suggWords.at(0));
+		}
+	} else {
+		//no word found
+		ui.listSuggestions->setEnabled(false);
+		ui.lineEditNew->setEnabled(false);
+		ui.pushButtonIgnore->setEnabled(false);
+		ui.pushButtonAlwaysIgnore->setEnabled(false);
+		ui.pushButtonReplace->setEnabled(false);
+		ui.lineEditOriginal->setEnabled(false);
+		ui.lineEditOriginal->clear();
+		ui.listSuggestions->clear();
+		ui.lineEditNew->clear();
+		m_statusBar->showMessage("<b>" + tr("No more misspelled words") + "</b>");
+	}
+
+
+
+
+
+
+
 	for (; curLine <= endLine; curLine++) {
 		latexReader.line = editor->text(curLine);
 		LatexReader::NextWordFlag nwf;
@@ -173,41 +207,14 @@ void SpellerDialog::SpellingNextWord()
 			if (m_speller->check(latexReader.word)) continue;
 			QStringList suggWords = m_speller->suggest(latexReader.word);
 
-			QDocumentCursor wordSelection(editor->document(), curLine, latexReader.wordStartIndex);
-			wordSelection.movePosition(latexReader.index - latexReader.wordStartIndex, QDocumentCursor::NextCharacter, QDocumentCursor::KeepAnchor);
-			editor->setCursor(wordSelection);
 
-			ui.listSuggestions->setEnabled(true);
-			ui.lineEditNew->setEnabled(true);
-			ui.pushButtonIgnore->setEnabled(true);
-			ui.pushButtonAlwaysIgnore->setEnabled(true);
-			ui.pushButtonReplace->setEnabled(true);
-			ui.lineEditOriginal->setEnabled(true);
-			ui.lineEditOriginal->setText(latexReader.word);
-			ui.listSuggestions->clear();
-			ui.lineEditNew->clear();
-			m_statusBar->clearMessage();
-			if (!suggWords.isEmpty()) {
-				ui.listSuggestions->addItems(suggWords);
-				ui.lineEditNew->setText(suggWords.at(0));
-			}
-			return;
+
+
 		}
 		latexReader.index = 0;
 		latexReader.word = "";
 	}
 
-	//no word found
-	ui.listSuggestions->setEnabled(false);
-	ui.lineEditNew->setEnabled(false);
-	ui.pushButtonIgnore->setEnabled(false);
-	ui.pushButtonAlwaysIgnore->setEnabled(false);
-	ui.pushButtonReplace->setEnabled(false);
-	ui.lineEditOriginal->setEnabled(false);
-	ui.lineEditOriginal->clear();
-	ui.listSuggestions->clear();
-	ui.lineEditNew->clear();
-	m_statusBar->showMessage("<b>" + tr("No more misspelled words") + "</b>");
 }
 
 void SpellerDialog::toggleIgnoreList(bool forceHide)

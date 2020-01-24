@@ -15,7 +15,6 @@
 
 #include "latexeditorview.h"
 #include "spellerutility.h"
-#include "latexparser/latexreader.h"
 
 #include "ui_spellerdialog.h"
 
@@ -39,8 +38,9 @@ private :
 	SpellerUtility *m_speller;
 	QEditor *editor;
 	LatexEditorView *editorView;
-	LatexReader latexReader;
-	int startLine, startIndex, curLine, endLine, endIndex;
+	int startLine, startIndex, endLine, endIndex;
+	TokenList *curTokenList;
+	int curLine, curTokenIndex, curWordStart, curWordLen;
 	bool ignoreListChanged;
 
 protected:
