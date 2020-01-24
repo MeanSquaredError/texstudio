@@ -10,6 +10,7 @@ HEADERS += \
     $$PWD/latexparser.h \
     $$PWD/latexparsing.h \
     $$PWD/latexreader.h \
+    $$PWD/latextokenstream.h \
     $$PWD/commanddescription.h
 
 SOURCES += \
@@ -18,6 +19,5 @@ SOURCES += \
     $$PWD/latexparser.cpp \
     $$PWD/latexparsing.cpp \
     $$PWD/latexreader.cpp \
+    $$PWD/latextokenstream.cpp \
     $$PWD/commanddescription.cpp
-
-
