@@ -982,6 +982,45 @@ QString findRestArg(QDocumentLineHandle *dlh, Token::TokenType type, int hint, i
 
 
 /*!
+ * \brief get token list for a specified line handle
+ * \param dlh line handle
+ * \param startCol only list tokens at or after this column number. The default value is -1 which means no limit.
+ * \param startPartial allow tokens that lie partially before startCol
+ * \param endCol only list tokens before this column number. The default value is -1 which means no limit.
+ * \param endPartial allow tokens that lie partially after endCol
+ */
+TokenList getTokenList(QDocumentLineHandle *dlh, int startCol, bool startPartial, int endCol, bool endPartial)
+{
+	TokenList tokenList = dlh->getCookieLocked(QDocumentLine::LEXER_COOKIE).value<TokenList>();
+	if (startCol != -1) {
+		while (tokenList.isEmpty() == false) {
+			Token &token = tl.first();
+			if (token.start >= startCol) {
+				break;
+			}
+			if (startPartial && (token.start + token.length > startCol)) {
+				break;
+			}
+			tokenList.removeFirst();
+		}
+	}
+	if (endCol != -1) {
+		while (tokenList.isEmpty() == false) {
+			Token &token = tl.last();
+			if (endPartial && (token.start < endCol)) {
+				break;
+			}
+			if (token.start + token.length <= endCol) {
+				break;
+			}
+			tokenList.removeLast();
+		}
+	}
+	return tokenList;
+}
+
+
+/*!
  * \brief get token at column
  * \param dlh linehandle
  * \param pos columns number

@@ -4,6 +4,17 @@
 #include "latexparser.h"
 
 /*!
+ * \brief Class that represents the parsed document as a stream of tokens
+ *
+ */
+class LatexReader
+{
+	LatexReader();
+};
+
+
+
+/*!
  * \brief class for parsing latex code
  *
  * \warning obsolete with lexer based token system

@@ -20,8 +20,10 @@ QString getArg(TokenList tl, QDocumentLineHandle *dlh, int argNumber, ArgumentLi
 QString getArg(const TokenList &tl, Token::TokenType type);
 QString findRestArg(QDocumentLineHandle *dlh, Token::TokenType type, int hint=-1, int count = 10); ///< internal
 
+TokenList getTokenList(QDocumentLineHandle *dlh, int startCol = -1, bool startPartial = false, int endCol = -1, bool endPartial = false)
 Token getTokenAtCol(QDocumentLineHandle *dlh, int pos, bool first = false);
 int getTokenAtCol(TokenList &tl, int pos, bool first = false);
+Token getNextToken(const Token &tk, int lineHint);
 TokenList getArgContent(Token &tk);
 TokenList getArgContent(TokenList &tl, int pos, int level, int runAwayPrevention = 10);
 TokenStack getContext(QDocumentLineHandle *dlh, int pos);

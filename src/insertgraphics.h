@@ -46,7 +46,7 @@ private:
 
 	InsertGraphicsConfig getConfig() const;
 	void setConfig(const InsertGraphicsConfig &conf);
-	bool parseCode(const QString &code, InsertGraphicsConfig &conf);
+	bool parseCode(const QDocumentCursor &cursor, InsertGraphicsConfig &conf);
 	bool fileNeedsInputCommand(const QString &filename) const;
 	QString getFormattedFilename(const QString filename) const;
 	QString getCaptionLabelString(const InsertGraphicsConfig &conf) const;
@@ -67,7 +67,7 @@ public slots:
 	void setTexFile(const QFileInfo &fi);
 	void setMasterTexFile(const QFileInfo &fi);
 	void setGraphicsFile(const QString &file);
-	void setCode(const QString &code);
+	void setCode(const QDocumentCursor &cursor);
 
 signals:
 	void fileNameChanged(const QString &);

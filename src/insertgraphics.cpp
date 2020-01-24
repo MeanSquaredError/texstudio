@@ -16,7 +16,6 @@
 
 #include "smallUsefulFunctions.h"
 #include "latexparser/latexparser.h"
-#include "latexparser/latexreader.h"
 
 
 PlacementValidator::PlacementValidator(QObject *parent)
@@ -128,10 +127,10 @@ void InsertGraphics::setGraphicsFile(const QString &file)
 	ui.leFile->setText(file);
 }
 
-void InsertGraphics::setCode(const QString &code)
+void InsertGraphics::setCode(const QDocumentCursor &cursor)
 {
 	InsertGraphicsConfig conf;
-	if (parseCode(code, conf)) setConfig(conf);
+	if (parseCode(cursor, conf)) setConfig(conf);
 }
 
 QString InsertGraphics::graphicsFile() const
@@ -228,7 +227,7 @@ void InsertGraphics::setConfig(const InsertGraphicsConfig &conf)
 	ui.cbSpan->setChecked(conf.spanTwoCols);
 }
 
-bool InsertGraphics::parseCode(const QString &code, InsertGraphicsConfig &conf)
+bool InsertGraphics::parseCode(const QDocumentCursor &cursor, InsertGraphicsConfig &conf)
 {
 	QString cmd, name, arg;
 	bool includeParsed = false;
@@ -239,86 +238,102 @@ bool InsertGraphics::parseCode(const QString &code, InsertGraphicsConfig &conf)
 
 	conf.center = false;
 
-	LatexReader lr(code);
-	while (lr.index < code.length()) {
-		args.clear();
-		argStarts.clear();
-		int nw = lr.nextWord(true);
-		if (nw == LatexReader::NW_COMMENT) {
-			if (!containsComment) UtilsUi::txsWarning("Graphics inclusion wizard does not support comments. They will be removed if you edit the code with the wizard.");
-			containsComment = true;
-			lr.index = code.indexOf("\n", lr.index);
-			continue;
-		} else if (nw != LatexReader::NW_COMMAND)
-			continue;
-
-
-		if (lr.word == "\\centering") {
-			conf.center = true;
-			lr.index = lr.wordStartIndex + lr.word.length();
-			continue;
+	QDocument *document = cursor.document;
+	int startLine = cursor.startLineNumber();
+	int endLine = cursor.endLineNumber();
+	for (int currentLine = startLine; currentLine <= endLine; ++currentLine) {
+		if (currentLine == startLine) {
+			tokenList = getTokenList();
 		}
-		LatexParser::resolveCommandOptions(code, lr.index, args, &argStarts);
-		if (args.length() == 0) {
-			UtilsUi::txsWarning(tr("Could not parse graphics inclusion code:\nInsufficient number of arguments to ") + lr.word);
-			return false;
-		}
-		lr.index = argStarts.last() + args.last().length();
-		if (lr.word == "\\begin") {
-			if (args.at(0) == "{figure}") {
-				conf.useFigure = true;
-				conf.spanTwoCols = false;
-				conf.placement = (args.length() < 2) ? "" : LatexParser::removeOptionBrackets(args.at(1));
-			} else 	if (args.at(0) == "{figure*}") {
-				conf.useFigure = true;
-				conf.spanTwoCols = true;
-				conf.placement = (args.length() < 2) ? "" : LatexParser::removeOptionBrackets(args.at(1));
-			} else if (args.at(0) == "{center}") {
-				conf.useFigure = false;
+		TokenList tokenList = getTokenList(
+			document->line()->handle(),
+			(currentLine == startLine) ? cursor.startColumnNumber() : -1,
+			false,
+			(currentLine == endLine) ? cursor.endColumnNumber() : -1
+		);
+		foreach (Token &token, tokenList) {
+			args.clear();
+			argStarts.clear();
+			if (token.type == Token::comment) {
+				if (!containsComment) UtilsUi::txsWarning("Graphics inclusion wizard does not support comments. They will be removed if you edit the code with the wizard.");
+				containsComment = true;
+				break;	// Next line
+			}
+			if (token.type != Token::command) {
+				continue;	// Next token
+			}
+			if (token.getText() == "\\centering") {
 				conf.center = true;
-			} else {
-				UtilsUi::txsWarning(tr("Could not parse graphics inclusion code:\nThe wizard does not support environment ") + args.at(0));
+				continue;	// Next token
+			}
+
+
+
+
+
+
+			LatexParser::resolveCommandOptions(code, lr.index, args, &argStarts);
+			if (args.length() == 0) {
+				UtilsUi::txsWarning(tr("Could not parse graphics inclusion code:\nInsufficient number of arguments to ") + lr.word);
 				return false;
 			}
-		} else if (lr.word == "\\end") {
-			// nothing to do
-		} else if (lr.word == "\\caption") {
-			if (args.at(0).at(0) == '[') {
-				conf.shortCaption = LatexParser::removeOptionBrackets((args.at(0)));
-				if (args.length() < 2) {
-					UtilsUi::txsWarning(tr("Could not parse graphics inclusion code:\nInvalid \\caption command."));
-				}
-				conf.caption = LatexParser::removeOptionBrackets(args.at(1));
-			} else {
-				conf.shortCaption.clear();
-				conf.caption = LatexParser::removeOptionBrackets(args.at(0));
-			}
-			conf.captionBelow = includeParsed;
-		} else if (lr.word == "\\label") {
-			conf.label = LatexParser::removeOptionBrackets(args.at(0));
-		} else if (lr.word == "\\includegraphics") {
-			if (args.at(0).at(0) == '[') {
-				conf.includeOptions = LatexParser::removeOptionBrackets(args.at(0));
-				if (args.length() < 2) {
-					UtilsUi::txsWarning(tr("Could not parse graphics inclusion code:\nMissing \\includegraphics options."));
+			lr.index = argStarts.last() + args.last().length();
+			if (lr.word == "\\begin") {
+				if (args.at(0) == "{figure}") {
+					conf.useFigure = true;
+					conf.spanTwoCols = false;
+					conf.placement = (args.length() < 2) ? "" : LatexParser::removeOptionBrackets(args.at(1));
+				} else 	if (args.at(0) == "{figure*}") {
+					conf.useFigure = true;
+					conf.spanTwoCols = true;
+					conf.placement = (args.length() < 2) ? "" : LatexParser::removeOptionBrackets(args.at(1));
+				} else if (args.at(0) == "{center}") {
+					conf.useFigure = false;
+					conf.center = true;
+				} else {
+					UtilsUi::txsWarning(tr("Could not parse graphics inclusion code:\nThe wizard does not support environment ") + args.at(0));
 					return false;
 				}
-				conf.file = LatexParser::removeOptionBrackets(args.at(1));
-			} else {
+			} else if (lr.word == "\\end") {
+				// nothing to do
+			} else if (lr.word == "\\caption") {
+				if (args.at(0).at(0) == '[') {
+					conf.shortCaption = LatexParser::removeOptionBrackets((args.at(0)));
+					if (args.length() < 2) {
+						UtilsUi::txsWarning(tr("Could not parse graphics inclusion code:\nInvalid \\caption command."));
+					}
+					conf.caption = LatexParser::removeOptionBrackets(args.at(1));
+				} else {
+					conf.shortCaption.clear();
+					conf.caption = LatexParser::removeOptionBrackets(args.at(0));
+				}
+				conf.captionBelow = includeParsed;
+			} else if (lr.word == "\\label") {
+				conf.label = LatexParser::removeOptionBrackets(args.at(0));
+			} else if (lr.word == "\\includegraphics") {
+				if (args.at(0).at(0) == '[') {
+					conf.includeOptions = LatexParser::removeOptionBrackets(args.at(0));
+					if (args.length() < 2) {
+						UtilsUi::txsWarning(tr("Could not parse graphics inclusion code:\nMissing \\includegraphics options."));
+						return false;
+					}
+					conf.file = LatexParser::removeOptionBrackets(args.at(1));
+				} else {
+					conf.includeOptions = "";
+					conf.file = LatexParser::removeOptionBrackets(args.at(0));
+				}
+				includeParsed = true;
+			} else if (lr.word == "\\input") {
 				conf.includeOptions = "";
 				conf.file = LatexParser::removeOptionBrackets(args.at(0));
+				if (QFileInfo(conf.file).suffix().isEmpty()) {
+					conf.file.append(".tex");  // need to add .tex to distinguish from image files
+				}
+				includeParsed = true;
+			} else {
+				UtilsUi::txsWarning(tr("Could not parse graphics inclusion code:\nThe wizard does not support command ") + lr.word);
+				return false;
 			}
-			includeParsed = true;
-		} else if (lr.word == "\\input") {
-			conf.includeOptions = "";
-			conf.file = LatexParser::removeOptionBrackets(args.at(0));
-			if (QFileInfo(conf.file).suffix().isEmpty()) {
-				conf.file.append(".tex");  // need to add .tex to distinguish from image files
-			}
-			includeParsed = true;
-		} else {
-			UtilsUi::txsWarning(tr("Could not parse graphics inclusion code:\nThe wizard does not support command ") + lr.word);
-			return false;
 		}
 	}
 	return true;
